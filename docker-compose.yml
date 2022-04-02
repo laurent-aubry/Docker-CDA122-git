@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  mongodb:
+    image: 'mongo'
+    volumes: 
+      - data:/data/db # Nom du volume : chemin
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: mongoadmin # les 2 syntaxes sont possibles
+    #   # - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+    #   MONGO_INITDB_ROOT_PASSWORD: secret
+    env_file:
+      - ./env/mongo.env # permet d'envoyer son fichier de config sur GIT sans les variables d'environnement
+    # networks: # si l'on souhaite attribuer un nom spécifique au network
+    #   - greta-net # inutile car Docker-compose créé un network pour le projet complet nativement
+  backend:
+    build: ./CDA-Backend-CDA1-22 # cherche le dockerfile dans ce répertoire
+    # build:
+    #   context: ./CDA-Backend-CDA1-22
+    #   dockerfile: dockerfile
+    #   args:
+    #     arg1: example
+    ports:
+      - '5000:5000'
+    volumes:
+      # - logs:/app/logs # pour exemple
+      - ./CDA-Backend-CDA1-22:/app # avec docker-compose, le chemin local peut être déclaré relativement
+      - /app/node_modules
+    env_file:
+      - ./env/backend.env
+    depends_on: # créer une dépendance au container mongodb afin de le démarrer en second
+      - mongodb 
+
+  frontend:
+    build: ./CDA-Frontend-CDA1-22
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./CDA-Frontend-CDA1-22/src:/app/src
+    depends_on:
+      - backend
+volumes: # chacun des volumes doit être listé en fin de fichier une 2ème fois afin d'être créé initialement par Docker-compose
+  data:
+  # logs:
+  # Bind mounted volumes ne sont pas à déclarer ici (CDA-Backend-CDA1-22) et volume anonymes non plus (node_modules)
